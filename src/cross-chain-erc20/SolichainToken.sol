@@ -109,6 +109,52 @@ contract SolichainToken is ERC20, CCIPReceiver, Ownable {
     }
 
     /**
+     * @notice Mint new Solichain tokens to the caller's address.
+     * @dev This function is public and intended for testing purposes only.
+     *      It allows anyone to mint arbitrary amounts of Solichain tokens on testnets.
+     *      In production deployments, this function should be restricted or removed.
+     * @param amount The amount of tokens to mint, denominated in wei (e.g., 1000 * 10**18).
+     * @custom:danger This function is unrestricted and should NOT be included in mainnet deployments.
+     */
+    function mint(uint256 amount) external {
+        _mint(msg.sender, amount);
+    }
+
+    /**
+     * @notice Withdraws LINK tokens (used for paying CCIP fees) to the contract owner
+     * @param amount The amount of LINK tokens to withdraw
+     */
+    function withdrawLink(uint256 amount) external onlyOwner {
+        require(
+            linkToken.balanceOf(address(this)) >= amount,
+            "Not enough LINK tokens"
+        );
+        linkToken.transfer(msg.sender, amount);
+    }
+
+    /**
+     * @notice Retrieves the required LINK fee for a cross-chain message
+     * @param destinationChain The chain ID of the destination chain
+     * @param amount The amount of tokens to transfer
+     * @return fees The amount of LINK tokens required as a fee
+     */
+    function getRequiredFee(
+        uint64 destinationChain,
+        uint256 amount
+    ) external view returns (uint256 fees) {
+        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
+            receiver: abi.encode(parallelTokenAddresses[destinationChain]),
+            data: abi.encode(msg.sender, amount),
+            tokenAmounts: new Client.EVMTokenAmount[](0),
+            extraArgs: "",
+            feeToken: address(linkToken)
+        });
+
+        IRouterClient router = IRouterClient(getRouter());
+        fees = router.getFee(destinationChain, message);
+    }
+
+    /**
      * @notice External getter function to retrieve the locked balance of an address
      * @param account The address for which to retrieve the locked balance
      * @return The amount of tokens locked for the given address
@@ -169,39 +215,5 @@ contract SolichainToken is ERC20, CCIPReceiver, Ownable {
         );
 
         _mint(sender, amount);
-    }
-
-    /**
-     * @notice Withdraws LINK tokens (used for paying CCIP fees) to the contract owner
-     * @param amount The amount of LINK tokens to withdraw
-     */
-    function withdrawLink(uint256 amount) external onlyOwner {
-        require(
-            linkToken.balanceOf(address(this)) >= amount,
-            "Not enough LINK tokens"
-        );
-        linkToken.transfer(msg.sender, amount);
-    }
-
-    /**
-     * @notice Retrieves the required LINK fee for a cross-chain message
-     * @param destinationChain The chain ID of the destination chain
-     * @param amount The amount of tokens to transfer
-     * @return fees The amount of LINK tokens required as a fee
-     */
-    function getRequiredFee(
-        uint64 destinationChain,
-        uint256 amount
-    ) external view returns (uint256 fees) {
-        Client.EVM2AnyMessage memory message = Client.EVM2AnyMessage({
-            receiver: abi.encode(parallelTokenAddresses[destinationChain]),
-            data: abi.encode(msg.sender, amount),
-            tokenAmounts: new Client.EVMTokenAmount[](0),
-            extraArgs: "",
-            feeToken: address(linkToken)
-        });
-
-        IRouterClient router = IRouterClient(getRouter());
-        fees = router.getFee(destinationChain, message);
     }
 }
