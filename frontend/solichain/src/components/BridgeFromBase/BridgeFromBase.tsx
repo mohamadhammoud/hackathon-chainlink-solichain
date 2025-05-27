@@ -6,7 +6,7 @@ import { InputNumber, notification } from "antd";
 import {  useAppKitAccount, useAppKitNetwork, useAppKitState  } from '@reown/appkit/react'
 import { networks } from '@/config'
 
-// Replace with your deployed SolichainToken address on Ethereum Sepolia
+// Replace with your deployed SolichainToken address on Base Sepolia
 const SOLICHAIN_TOKEN_ADDRESS = "0xYourSepoliaSCTAddress";
 const SOLICHAIN_TOKEN_ABI = [
   "function balanceOf(address) view returns (uint256)",
@@ -15,7 +15,7 @@ const SOLICHAIN_TOKEN_ABI = [
 
 const BASE_CHAIN_SELECTOR = 84532; // Chainlink CCIP selector for Base Sepolia
 
-export default function BridgeFromEthereum() {
+export default function BridgeFromBase() {
   const [balance, setBalance] = useState("0");
   const [amount, setAmount] =useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -30,8 +30,8 @@ export default function BridgeFromEthereum() {
   useEffect(() => {
 
 
-    if(isConnected && !state.selectedNetworkId?.includes(networks[0].id as string)) {
-        switchNetwork(networks[0])
+    if(isConnected && !state.selectedNetworkId?.includes(networks[1].id as string)) {
+        switchNetwork(networks[1])
     }
 }, [isConnected]);
 
@@ -66,7 +66,7 @@ export default function BridgeFromEthereum() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-xl font-semibold">🌉 Bridge from Ethereum Sepolia to Base Sepolia</h2>
+      <h2 className="text-xl font-semibold">🌉 Bridge from Base Sepolia to Ethereum Sepolia</h2>
 
       <div className="text-sm text-gray-700">
         <strong>Wallet:</strong> {walletAddress || "Not connected"}

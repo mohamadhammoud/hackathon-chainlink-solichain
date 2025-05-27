@@ -11,6 +11,7 @@ import type { MenuProps } from "antd";
 import { Layout, Menu, theme } from "antd";
 import WalletConnect from "./WalletConnect";
 import BridgeFromEthereum from "./BridgeFromEthereum/BridgeFromEthereum";
+import BridgeFromBase from "./BridgeFromBase/BridgeFromBase";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -55,7 +56,7 @@ const SolichainDashboard: React.FC = () => {
       case "bridge-eth":
         return <div className="mt-6"> <BridgeFromEthereum /> </div>;
       case "bridge-base":
-        return <div className="mt-6">🌉 Bridge SCT from Base Sepolia → Ethereum Sepolia</div>;
+        return <div className="mt-6"><BridgeFromBase /></div>;
       case "rwa":
         return <div className="mt-6">🏡 RWA Marketplace — Invest in Real Estate</div>;
       case "vault":
