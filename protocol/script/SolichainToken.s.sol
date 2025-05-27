@@ -39,7 +39,7 @@ contract DeploySolichainToken is Script {
 }
 
 // deploying on ethereum sepolia
-// forge script script/SolichainToken.sol --rpc-url $ETHEREUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
+// forge script script/SolichainToken.s.sol --rpc-url $ETHEREUM_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
 // ##### sepolia
 // ✅  [Success]Hash: 0x06ed99a8beb6d38ff862294c64de092079d8bd8ec130ba9e0d9ac924a5a0e919
 // Contract Address: 0xBD1e6CB60c174d69cAAC4Be32CeC3CbCBFd80F16
@@ -58,7 +58,7 @@ contract DeploySolichainToken is Script {
 // forge verify-contract --chain-id 11155111 --num-of-optimizations 200 --compiler-version v0.8.19 --watch "0xBD1e6CB60c174d69cAAC4Be32CeC3CbCBFd80F16" "src/cross-chain-erc20/SolichainToken.sol:SolichainToken" --etherscan-api-key "PUT YOUR ETHER SCAN API VALUE HERE" --constructor-args 0x0000000000000000000000000000000000000000033b2e3c9fd0803ce80000000000000000000000000000000bf3de8c5d3e8a2b34d2beeb17abfcebaf363a59000000000000000000000000779877a7b0d9e8603169ddbd7836e478b4624789
 
 // deploying on ethereum sepolia
-// forge script script/SolichainToken.sol --rpc-url $BASE_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
+// forge script script/SolichainToken.s.sol --rpc-url $BASE_SEPOLIA_RPC_URL --private-key $PRIVATE_KEY --broadcast
 
 //  base-sepolia
 // ✅  [Success]Hash: 0xa39568d1ee91455c20bdea262b6f4330b815607ddb6ddd1142d31db7a13d0f17
