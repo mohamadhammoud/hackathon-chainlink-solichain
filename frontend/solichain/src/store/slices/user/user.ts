@@ -3,7 +3,7 @@ import { RootState } from "../../store";
 import type { PayloadAction } from "@reduxjs/toolkit";
 
 const USER = {
-  id: "",
+  id: "";
   token: "",
   refreshToken: "",
   email: "",
@@ -17,7 +17,7 @@ const USER = {
  */
 const userSlice = createSlice({
   name: "user",
-  initialState: USER,
+  initialState: null,
   reducers: {
     setUser(state: any, action: PayloadAction<any>) {
       return {

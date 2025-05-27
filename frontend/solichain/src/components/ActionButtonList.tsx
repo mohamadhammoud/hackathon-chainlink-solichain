@@ -4,8 +4,8 @@ import { networks } from '@/config'
 
 export const ActionButtonList = () => {
     const { disconnect } = useDisconnect();
-    const { open } = useAppKit();
     const { switchNetwork } = useAppKitNetwork();
+    const { open } = useAppKit();
 
     const handleDisconnect = async () => {
       try {
