@@ -12,6 +12,7 @@ import { Layout, Menu, theme } from "antd";
 import WalletConnect from "./WalletConnect";
 import BridgeFromEthereum from "./BridgeFromEthereum/BridgeFromEthereum";
 import BridgeFromBase from "./BridgeFromBase/BridgeFromBase";
+import RWAInvestment from "./RWAInvestment/RWAInvestment";
 
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -58,7 +59,7 @@ const SolichainDashboard: React.FC = () => {
       case "bridge-base":
         return <div className="mt-6"><BridgeFromBase /></div>;
       case "rwa":
-        return <div className="mt-6">🏡 RWA Marketplace — Invest in Real Estate</div>;
+        return <div className="mt-6"><RWAInvestment /></div>;
       case "vault":
         return <div className="mt-6">💸 Lending Vault — Deposit & Borrow with Chainlink Prices</div>;
       default:
