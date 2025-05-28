@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { BrowserProvider, Contract, Eip1193Provider, formatUnits, parseEther, parseUnits } from "ethers";
 import { InputNumber, notification } from "antd";
-import { useAppKitAccount, useAppKitNetwork, useAppKitState } from "@reown/appkit/react";
+import { useAppKitAccount, useAppKitNetwork, useAppKitProvider, useAppKitState } from "@reown/appkit/react";
 import { networks } from "@/config";
 
 // Replace with your actual deployed addresses
-const SCT_ADDRESS = "0xYourSCTonBaseSepolia";
-const RWA_CONTRACT_ADDRESS = "0xYourRWAContractAddress";
+const SCT_ADDRESS = "0x926d672c8453c6BC85b19A15b48F3B1530b4bf29";
+const RWA_CONTRACT_ADDRESS = "0x1db6B964c3056539B72C60bB38400FA844107415";
 
 const SCT_ABI = [
   "function balanceOf(address) view returns (uint256)",
@@ -16,38 +16,104 @@ const SCT_ABI = [
 ];
 
 const RWA_ABI = [
-  "function getSharePrice() view returns (uint256)",
+  "function balanceOf(address) view returns (uint256)",
+  "function sharePrice() view returns (uint256)",
+  "function quote(uint256 amount) external view returns (uint256)",
   "function buyShares(uint256 sctAmount) external",
 ];
 
 export default function RWAInvestment() {
-  const [balance, setBalance] = useState("0");
-  const [price, setPrice] = useState("0");
+  const [stcBalance, setSTCBalance] = useState("0");
+  const [rwaBalance, setRWABalance] = useState("0");
+  const [sharePrice, setSharePrice] = useState("0");
+  const [quote, setQuote] = useState("0");
   const [amount, setAmount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
   const { address, isConnected } = useAppKitAccount();
   const { switchNetwork } = useAppKitNetwork();
+  const { walletProvider } = useAppKitProvider("eip155");
   const state = useAppKitState();
 
   useEffect(() => {
     if (isConnected && !state.selectedNetworkId?.includes(networks[1].id as string)) {
       switchNetwork(networks[1]); // Base Sepolia
     }
+
+      // get SCT balance
+      async function loadSTCBalance() {  
+        const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
+        // const signer = await ethersProvider.getSigner();
+  
+        // The Contract object
+        const solichainTokenContract = new Contract(SCT_ADDRESS, SCT_ABI, ethersProvider);
+        const solichainTokenBalance = await solichainTokenContract.balanceOf(address);
+        
+        setSTCBalance(() => formatUnits(solichainTokenBalance, 18));
+      }
+
+      // get SCT balance
+      async function loadRWABalance() {  
+        const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
+        // const signer = await ethersProvider.getSigner();
+  
+        // The Contract object
+        const rwaTokenContract = new Contract(RWA_CONTRACT_ADDRESS, RWA_ABI, ethersProvider);
+        const rwaBalance = await rwaTokenContract.balanceOf(address);
+        
+        setRWABalance(() => formatUnits(rwaBalance, 18));
+      }
+
+      async function loadSharePrice () {
+        const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
+        // const signer = await ethersProvider.getSigner();
+  
+        // The Contract object
+        const rwaTokenContract = new Contract(RWA_CONTRACT_ADDRESS, RWA_ABI, ethersProvider);
+        const price = await rwaTokenContract.sharePrice();
+        
+        setSharePrice(() => price);
+      };
+  
+      if(isConnected && state.selectedNetworkId?.includes(networks[1].id as string)) {
+        loadSTCBalance();
+        loadRWABalance();
+        loadSharePrice();
+      }
+
   }, [isConnected]);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadQuote() {
       try {
-       
+        if (
+          !walletProvider ||
+          amount === null ||
+          isNaN(+amount) ||
+          +amount <= 0
+        ) {
+          return;
+        }
+  
+        const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
+        const rwaTokenContract = new Contract(RWA_CONTRACT_ADDRESS, RWA_ABI, ethersProvider);
+  
+        // 👇 convert amount to BigNumber (wei)
+        const amountInWei = parseEther(amount.toString());
+        const quoted = await rwaTokenContract.quote(amountInWei);
+          console.log({quoted})
+        setQuote(() => formatUnits(quoted, 18)); // or just quoted.toString()
       } catch (err) {
-        console.error(err);
-        notification.error({ message: "Error loading balance or price" });
+        console.error("Quote failed", err);
+        notification.error({ message: "Could not get quote" });
       }
     }
-
-    loadData();
-  }, [address]);
+  
+    if (isConnected && amount !== null) {
+      loadQuote();
+    }
+  }, [isConnected, amount]);
+  
 
   const handleBuy = async () => {
     try {
@@ -56,7 +122,25 @@ export default function RWAInvestment() {
         return;
       }
 
-      setLoading(true);
+      if(isConnected) {
+        setLoading(true);
+
+        const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
+        const signer = await ethersProvider.getSigner();
+        
+        const amountInWei = parseEther(amount);
+
+        const solichainTokenContract = new Contract(SCT_ADDRESS, SCT_ABI, signer);
+        const approvalTx = await solichainTokenContract.approve(RWA_CONTRACT_ADDRESS, amountInWei);
+        await approvalTx.wait();
+
+        // The Contract object
+        const rwaTokenContract = new Contract(RWA_CONTRACT_ADDRESS, RWA_ABI, signer);
+        const buySharesTx = await rwaTokenContract.buyShares(amountInWei);
+        await buySharesTx.wait();
+
+        setLoading(false);
+      }
    
 
       notification.success({ message: `Successfully bought shares with ${amount} SCT!` });
@@ -69,11 +153,7 @@ export default function RWAInvestment() {
     }
   };
 
-  const getQuote = () => {
-    if (!amount || !price) return "0";
-    const shares = +amount / +price;
-    return shares.toFixed(4);
-  };
+ 
 
   return (
     <div className="flex flex-col gap-4">
@@ -83,10 +163,13 @@ export default function RWAInvestment() {
         <strong>Wallet:</strong> {address || "Not connected"}
       </div>
       <div className="text-sm text-gray-700">
-        <strong>SCT Balance:</strong> {balance} SCT
+        <strong>SCT Balance:</strong> {stcBalance} SCT
       </div>
       <div className="text-sm text-gray-700">
-        <strong>Share Price:</strong> {price} SCT
+        <strong>BHRWA token Balance:</strong> {rwaBalance} BHRWA
+      </div>
+      <div className="text-sm text-gray-700">
+        <strong>Share Price:</strong> {sharePrice} SCT
       </div>
 
       <InputNumber
@@ -99,9 +182,12 @@ export default function RWAInvestment() {
         controls={false}
       />
 
-      <div className="text-sm text-gray-500">
-        🧮 Estimated Shares: <strong>{getQuote()}</strong>
-      </div>
+<div className="text-sm text-gray-600 leading-5">
+  🧮 You will receive approximately <strong className="text-black">{quote} RWA shares </strong> 
+  for your input of <strong className="text-black">{amount} SCT</strong>, 
+  based on the current share price of <strong className="text-black">{sharePrice} SCT</strong> per share.
+</div>
+
 
       <button
         onClick={handleBuy}
