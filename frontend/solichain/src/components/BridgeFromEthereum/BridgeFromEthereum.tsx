@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ethers } from "ethers";
 import { InputNumber, notification } from "antd";
-import {  useAppKitAccount, useAppKitNetwork, useAppKitState  } from '@reown/appkit/react'
+import {  useAppKitAccount, useAppKitNetwork, useAppKitProvider, useAppKitState  } from '@reown/appkit/react'
+import { BrowserProvider, Contract, Eip1193Provider, formatUnits } from "ethers";
+
 import { networks } from '@/config'
 
 // Replace with your deployed SolichainToken address on Ethereum Sepolia
-const SOLICHAIN_TOKEN_ADDRESS = "0xYourSepoliaSCTAddress";
+const SOLICHAIN_TOKEN_ADDRESS = "0x926d672c8453c6BC85b19A15b48F3B1530b4bf29";
 const SOLICHAIN_TOKEN_ABI = [
   "function balanceOf(address) view returns (uint256)",
   "function lockTokens(uint64 destinationChain, uint256 amount) external",
@@ -19,30 +20,36 @@ export default function BridgeFromEthereum() {
   const [balance, setBalance] = useState("0");
   const [amount, setAmount] =useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [walletAddress, setWalletAddress] = useState("");
 
   const { switchNetwork } = useAppKitNetwork();
   const {address, caipAddress, isConnected, embeddedWalletInfo} = useAppKitAccount();
+  const { walletProvider } = useAppKitProvider("eip155");
 
   const state = useAppKitState();
   console.log({state})
 
   useEffect(() => {
 
-
     if(isConnected && !state.selectedNetworkId?.includes(networks[0].id as string)) {
-        switchNetwork(networks[0])
+      // force switching networks to Ethereum Sepolia
+      switchNetwork(networks[0])
+    }
+
+    // get SCT balance
+    async function loadBalance() {  
+      const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
+      const signer = await ethersProvider.getSigner();
+      // The Contract object
+      const solichainTokenContract = new Contract(SOLICHAIN_TOKEN_ADDRESS, SOLICHAIN_TOKEN_ABI, signer);
+      const solichainTokenBalance = await solichainTokenContract.balanceOf(address);
+      
+      setBalance(() => formatUnits(solichainTokenBalance, 18));
+    }
+
+    if(isConnected) {
+      loadBalance();
     }
 }, [isConnected]);
-
-  // Connect to Metamask and get SCT balance
-  useEffect(() => {
-    async function loadBalance() {
-   
-    }
-
-    loadBalance();
-  }, []);
 
   const handleBridge = async () => {
     try {
@@ -69,7 +76,7 @@ export default function BridgeFromEthereum() {
       <h2 className="text-xl font-semibold">🌉 Bridge from Ethereum Sepolia to Base Sepolia</h2>
 
       <div className="text-sm text-gray-700">
-        <strong>Wallet:</strong> {walletAddress || "Not connected"}
+        <strong>Wallet:</strong> {address || "Not connected"}
       </div>
 
       <div className="text-sm text-gray-700">
