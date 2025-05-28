@@ -7,7 +7,7 @@ import { BrowserProvider, Contract, Eip1193Provider, formatUnits } from "ethers"
 
 import { networks } from '@/config'
 
-// Replace with your deployed SolichainToken address on Ethereum Sepolia
+// deployed SolichainToken address on Ethereum Sepolia
 const SOLICHAIN_TOKEN_ADDRESS = "0x926d672c8453c6BC85b19A15b48F3B1530b4bf29";
 const SOLICHAIN_TOKEN_ABI = [
   "function balanceOf(address) view returns (uint256)",
@@ -38,9 +38,10 @@ export default function BridgeFromEthereum() {
     // get SCT balance
     async function loadBalance() {  
       const ethersProvider = new BrowserProvider(walletProvider as Eip1193Provider);
-      const signer = await ethersProvider.getSigner();
+      // const signer = await ethersProvider.getSigner();
+
       // The Contract object
-      const solichainTokenContract = new Contract(SOLICHAIN_TOKEN_ADDRESS, SOLICHAIN_TOKEN_ABI, signer);
+      const solichainTokenContract = new Contract(SOLICHAIN_TOKEN_ADDRESS, SOLICHAIN_TOKEN_ABI, ethersProvider);
       const solichainTokenBalance = await solichainTokenContract.balanceOf(address);
       
       setBalance(() => formatUnits(solichainTokenBalance, 18));
